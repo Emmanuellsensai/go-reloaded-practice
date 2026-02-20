@@ -67,6 +67,15 @@ func processFlags(text string) string {
 					isComplex := true
 				}
 			}
+
+			if op == "hex" || op == "bin" || op == "up" || op == "low" || op == "cap" {
+
+				for j := 1; j <= count && i-j >= 0; j++ {
+					target := words[i-j]
+
+				}
+			}
+
 		}
 	}
 }
