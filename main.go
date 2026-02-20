@@ -91,7 +91,7 @@ func processFlags(text string) string{
 						words[i-j] = strings.ToLower(target)
 
 					case "cap":
-						words[i-j] = strings,strings.Title(strings.ToLower(target))
+						words[i-j] = strings.Title(strings.ToLower(target))
 					}
 				}
 			} 
