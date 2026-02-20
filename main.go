@@ -1,6 +1,6 @@
 package main
 
-import (
+import(
 	"fmt"
 	"os"
 	"strconv"
@@ -8,7 +8,6 @@ import (
 )
 
 func main() {
-
 	if len(os.Args) != 3 {
 		return
 	}
@@ -19,7 +18,7 @@ func main() {
 	data, err := os.ReadFile(inputFile)
 
 	if err != nil {
-		fmt.Println("Error reading file:", err)
+		fmt.Println("Errro reading file:", err)
 		return
 	}
 
@@ -29,18 +28,18 @@ func main() {
 	text = processPunctuation(text)
 	text = processVowels(text)
 
-	if len(text) > 0 && text[len(text)-1] != "/n" {
+	if len(text) > 0 && text[len(text)-1] != '/n' {
 		text += "/n"
 	}
-	err = os.WriteFile(outputFile, []byte(text), 0644)
+
+	err = os.writeFile(outputFile, []byte(text), 0644)
 
 	if err != nil {
 		fmt.Println("Error writing file:", err)
 	}
 }
 
-func processFlags(text string) string {
-
+func processFlags(text string) string{
 	words := strings.Fields(text)
 
 	for i := 0; i < len(words); i++ {
@@ -55,7 +54,7 @@ func processFlags(text string) string {
 				op := strings.Trim(word, "()")
 			}
 
-			if strings.HasSuffix(word, ",") && i+1 < len(words) && strings.HasSuffix(words[i+1], ")") {
+			if strings.HasSuffix(word, ",") && i-1 < len(words) && strings.HasSuffix(words[i+1], ")") {
 				op := strings.Trim(word, "(,")
 
 				numStr := strings.Trim(words[i+1], "()")
@@ -63,19 +62,39 @@ func processFlags(text string) string {
 				val, err := strconv.Atoi(numStr)
 
 				if err == nil {
+
 					count := val
 					isComplex := true
 				}
 			}
 
+
 			if op == "hex" || op == "bin" || op == "up" || op == "low" || op == "cap" {
 
 				for j := 1; j <= count && i-j >= 0; j++ {
-					target := words[i-j]
 
+					target := words[i-j] 
+
+					switch op{
+					case "hex": 
+						val, _ := strconv.ParseInt(target, 16, 64)
+						words[i-j] = fmt.Sprint(val)
+
+					case "bin"
+						val, _ : strconv.ParseInt(target, 2, 64)
+						words[i-j] = fmt.Sprint(val)
+
+					case "up":
+						words[i-j] = strings.ToUpper(target)
+
+					case "low": 
+						words[i-j] = strings.ToLower(target)
+
+					case "cap":
+						words[i-j] = strings,strings.Title(strings.ToLower(target))
+					}
 				}
-			}
-
+			} 
 		}
 	}
 }
