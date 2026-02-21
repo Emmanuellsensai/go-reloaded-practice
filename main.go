@@ -8,6 +8,7 @@ import(
 )
 
 func main() {
+
 	if len(os.Args) != 3 {
 		return
 	}
@@ -32,7 +33,7 @@ func main() {
 		text += "/n"
 	}
 
-	err = os.writeFile(outputFile, []byte(text), 0644)
+	err = os.WriteFile(outputFile, []byte(text), 0644)
 
 	if err != nil {
 		fmt.Println("Error writing file:", err)
@@ -40,9 +41,11 @@ func main() {
 }
 
 func processFlags(text string) string{
+
 	words := strings.Fields(text)
 
 	for i := 0; i < len(words); i++ {
+
 		word := words[i]
 
 		if strings.HasPrefix(word, "(") {
@@ -51,7 +54,9 @@ func processFlags(text string) string{
 			isComplex := false
 
 			if strings.HasSuffix(word, ")") {
+
 				op := strings.Trim(word, "()")
+				
 			}
 
 			if strings.HasSuffix(word, ",") && i-1 < len(words) && strings.HasSuffix(words[i+1], ")") {
