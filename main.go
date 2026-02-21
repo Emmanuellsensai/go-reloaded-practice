@@ -1,6 +1,6 @@
 package main
 
-import(
+import (
 	"fmt"
 	"os"
 	"strconv"
@@ -19,18 +19,18 @@ func main() {
 	data, err := os.ReadFile(inputFile)
 
 	if err != nil {
-		fmt.Println("Errro reading file:", err)
+		fmt.Println("Error reading file:", err)
 		return
 	}
 
 	text := string(data)
 
 	text = processFlags(text)
-	text = processPunctuation(text)
-	text = processVowels(text)
+	//text = processPuctuation(text)
+	//text = processVowels(text)
 
-	if len(text) > 0 && text[len(text)-1] != '/n' {
-		text += "/n"
+	if len(text) > 0 && text[len(text)-1] != '\n' {
+		text += "\n"
 	}
 
 	err = os.WriteFile(outputFile, []byte(text), 0644)
@@ -40,7 +40,7 @@ func main() {
 	}
 }
 
-func processFlags(text string) string{
+func processFlags(text string) string {
 
 	words := strings.Fields(text)
 
@@ -55,12 +55,13 @@ func processFlags(text string) string{
 
 			if strings.HasSuffix(word, ")") {
 
-				op := strings.Trim(word, "()")
-				
+				op = strings.Trim(word, "()")
+
 			}
 
-			if strings.HasSuffix(word, ",") && i-1 < len(words) && strings.HasSuffix(words[i+1], ")") {
-				op := strings.Trim(word, "(,")
+			if strings.HasSuffix(word, ",") && i+1 <= len(words) && strings.HasSuffix(words[i+1], ")") {
+
+				op = strings.Trim(word, "(,")
 
 				numStr := strings.Trim(words[i+1], "()")
 
@@ -68,38 +69,47 @@ func processFlags(text string) string{
 
 				if err == nil {
 
-					count := val
-					isComplex := true
+					count = val
+					isComplex = true
 				}
 			}
-
 
 			if op == "hex" || op == "bin" || op == "up" || op == "low" || op == "cap" {
 
 				for j := 1; j <= count && i-j >= 0; j++ {
 
-					target := words[i-j] 
+					target := words[i-j]
 
-					switch op{
-					case "hex": 
+					switch op {
+					case "hex":
 						val, _ := strconv.ParseInt(target, 16, 64)
 						words[i-j] = fmt.Sprint(val)
 
-					case "bin"
-						val, _ : strconv.ParseInt(target, 2, 64)
+					case "bin":
+						val, _ := strconv.ParseInt(target, 2, 64)
 						words[i-j] = fmt.Sprint(val)
 
 					case "up":
 						words[i-j] = strings.ToUpper(target)
 
-					case "low": 
+					case "low":
 						words[i-j] = strings.ToLower(target)
 
 					case "cap":
 						words[i-j] = strings.Title(strings.ToLower(target))
 					}
 				}
-			} 
+
+				if isComplex {
+
+					words = append(words[:i], words[i+2:]...)
+				} else {
+
+					words = append(words[:i], words[i+1:]...)
+				}
+				i--
+			}
 		}
 	}
+	return strings.Join(words, " ")
 }
