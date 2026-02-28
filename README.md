@@ -303,82 +303,82 @@ Reassembles all the words back into a single string with single spaces between t
 
 ## 4. `processPunctuation()` — Fixing Punctuation
 
-This pass ensures punctuation is glued to the word before it (no space before), has a space after it, and that single quotes have no inner spaces.
+This pass walks through the text **one character at a time** and rebuilds it correctly — removing spaces before punctuation and adding a space after it where needed. This approach is more efficient than the previous version because it never splits the text into a slice at all, it just reads and writes characters directly.
 
 ```go
 func processPunctuation(text string) string {
-    punctuations := []string{".", ",", "!", "?", ":", ";"}
+    var result strings.Builder
 ```
-A slice of all the punctuation characters we need to handle.
+`strings.Builder` is Go's most efficient way to build a string piece by piece. Instead of creating a new string every time you add a character (which is slow and wastes memory), `Builder` keeps an internal buffer and only produces the final string when you call `.String()` at the end.
 
 ---
 
-### Step 1: Isolate Punctuation
-
 ```go
-    for _, p := range punctuations {
-        text = strings.ReplaceAll(text, p, " "+p+" ")
-    }
+    for i := 0; i < len(text); i++ {
 ```
-Wraps every punctuation character with spaces on both sides. This guarantees that when we call `strings.Fields()` next, every punctuation mark becomes its own separate token — regardless of how it was originally spaced.
-
-Before: `"hello ,world"` or `"hello, world"` or `"hello,world"`
-After: `"hello  ,  world"` (Fields will clean up the extra spaces)
-
-> This also handles groups like `...` — each `.` gets spaces added, giving `" .  .  . "` which `Fields()` turns into `[".", ".", "."]`. These will all get glued back together in Step 2.
+Loops through every single character in the text by its byte index. `len(text)` returns the number of bytes in the string.
 
 ---
 
-### Step 2: Glue Punctuation to Previous Word
+### Rule 1: Skip spaces that appear before punctuation
 
 ```go
-    words := strings.Fields(text)
-    var result []string
-
-    for _, word := range words {
-        isPunc := strings.ContainsAny(word, ".!?,;:")
-        if isPunc && len(result) > 0 {
-            result[len(result)-1] += word
-        } else {
-            result = append(result, word)
+        if text[i] == ' ' && i+1 < len(text) && strings.ContainsRune(".,!?:;", rune(text[i+1])) {
+            continue
         }
-    }
 ```
-`strings.ContainsAny()` returns `true` if the word contains **any** of the listed characters. If the current token is a punctuation mark, instead of adding it as a new element, we **concatenate it onto the last element** of `result` using `+=`.
+This is a **lookahead** — before writing the current character, we peek at the next one. Three conditions are all checked together:
 
-Example walkthrough with `"hello , world !"`:
-- Fields gives: `["hello", ",", "world", "!"]`
-- `"hello"` → not punctuation → `result = ["hello"]`
-- `","` → punctuation → `result = ["hello,"]`
-- `"world"` → not punctuation → `result = ["hello,", "world"]`
-- `"!"` → punctuation → `result = ["hello,", "world!"]`
-- Join → `"hello, world!"`
+1. `text[i] == ' '` — the current character is a space
+2. `i+1 < len(text)` — there IS a next character (guards against going out of bounds)
+3. `strings.ContainsRune(".,!?:;", rune(text[i+1]))` — the next character is punctuation
+
+If all three are true, the space is a bad space that sits between a word and its punctuation. `continue` skips it entirely — it never gets written to `result`.
+
+Example: `"hello ,"` → the space before `,` is skipped → `"hello,"`
 
 ---
 
 ```go
-    text = strings.Join(result, " ")
+        result.WriteByte(text[i])
 ```
-Rebuilds the string from the corrected word list.
+If the character was not skipped above, it gets written into the result buffer. `WriteByte()` adds a single byte (character) to the builder.
 
 ---
 
-### Step 3: Fix Single Quotes
+### Rule 2: Insert a space after punctuation if one is missing
 
 ```go
-    for strings.Contains(text, "' ") || strings.Contains(text, " '") {
-        text = strings.ReplaceAll(text, "' ", "'")
-        text = strings.ReplaceAll(text, " '", "'")
-    }
+        if strings.ContainsRune(".,!?:;", rune(text[i])) && i+1 < len(text) && !strings.ContainsRune(".,!?:; ", rune(text[i+1])) {
+            result.WriteByte(' ')
+        }
 ```
-Single quotes should have no spaces between them and the words they wrap.
+After writing a punctuation character, we immediately check if a space needs to be added after it. Again three conditions:
 
-The `for` loop (not `if`) keeps repeating until there are no more cases to fix. This is needed because after the first replacement, a new problematic pattern might be revealed.
+1. `strings.ContainsRune(".,!?:;", rune(text[i]))` — the character we just wrote is punctuation
+2. `i+1 < len(text)` — there is a next character
+3. `!strings.ContainsRune(".,!?:; ", rune(text[i+1]))` — the next character is **not** another punctuation mark AND **not** already a space
 
-Example: `"' awesome '"` 
-- First pass removes `"' "` → `"'awesome '"`  
-- Second pass removes `" '"` → `"'awesome'"`  
-- No more matches → loop ends
+The `!` (not) on condition 3 is what handles groups like `...` or `!?` — if the next character is also punctuation, we don't insert a space between them. We only add a space when the next character is a real word character.
+
+Example walkthrough with `"hello,world"`:
+- Writes `h`, `e`, `l`, `l`, `o` normally
+- Writes `,` → next character is `w`, which is not punctuation or space → inserts `' '`
+- Writes `w`, `o`, `r`, `l`, `d` normally
+- Result: `"hello, world"`
+
+Example with `"hello..."`:
+- Writes `.` → next is `.` → condition 3 is false → no space inserted
+- Writes `.` → next is `.` → no space inserted
+- Writes `.` → nothing after → condition 2 is false → no space inserted
+- Result: `"hello..."` ✓
+
+---
+
+```go
+    return result.String()
+```
+`.String()` finalizes the builder and returns everything that was written to it as a single string.
 
 ---
 
