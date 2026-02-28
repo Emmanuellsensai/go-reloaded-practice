@@ -129,7 +129,13 @@ func processPunctuation(text string) string {
 			result.WriteByte(' ')
 		}
 	}
-	return result.String()
+	// Fix single quotes — remove spaces inside ' ... '
+	text = result.String()
+	for strings.Contains(text, "' ") || strings.Contains(text, " '") {
+		text = strings.ReplaceAll(text, "' ", "'")
+		text = strings.ReplaceAll(text, " '", "'")
+	}
+	return text
 }
 
 // PASS 3: 'a' -> 'an' before vowels or 'h'
