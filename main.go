@@ -118,35 +118,18 @@ func processFlags(text string) string {
 
 // PASS 2: Handle Punctuation spacing & Single Quotes
 func processPunctuation(text string) string {
-	punctuations := []string{".", ",", "!", "?", ":", ";"}
+	var result strings.Builder
 
-	// Step 1: Ensure space around all punctuation so Fields() isolates them
-	for _, p := range punctuations {
-		text = strings.ReplaceAll(text, p, " "+p+" ")
-	}
-
-	// Step 2: Attach each punctuation mark to the word before it
-	words := strings.Fields(text)
-	var result []string
-
-	for _, word := range words {
-		isPunc := strings.ContainsAny(word, ".!?,;:")
-		if isPunc && len(result) > 0 {
-			result[len(result)-1] += word // glue to previous word
-		} else {
-			result = append(result, word)
+	for i := 0; i < len(text); i++ {
+		if text[i] == ' ' && i+1 < len(text) && strings.ContainsRune(".,!?:;", rune(text[i+1])) {
+			continue
+		}
+		result.WriteByte(text[i])
+		if strings.ContainsRune(".,!?:;", rune(text[i])) && i+1 < len(text) && !strings.ContainsRune(".,!?:; ", rune(text[i+1])) {
+			result.WriteByte(' ')
 		}
 	}
-
-	text = strings.Join(result, " ")
-
-	// Step 3: Fix single quotes — remove spaces inside ' ... '
-	for strings.Contains(text, "' ") || strings.Contains(text, " '") {
-		text = strings.ReplaceAll(text, "' ", "'")
-		text = strings.ReplaceAll(text, " '", "'")
-	}
-
-	return text
+	return result.String()
 }
 
 // PASS 3: 'a' -> 'an' before vowels or 'h'
