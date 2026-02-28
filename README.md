@@ -376,9 +376,25 @@ Example with `"hello..."`:
 ---
 
 ```go
-    return result.String()
+    text = result.String()
+    for strings.Contains(text, "' ") || strings.Contains(text, " '") {
+        text = strings.ReplaceAll(text, "' ", "'")
+        text = strings.ReplaceAll(text, " '", "'")
+    }
+    return text
 ```
-`.String()` finalizes the builder and returns everything that was written to it as a single string.
+The builder has now handled all punctuation spacing, so we call `result.String()` to get the rebuilt text and store it back into `text`.
+
+Then the quote loop runs. Single quotes should have no spaces between them and the words they wrap — `' I am awesome '` should become `'I am awesome'`.
+
+The `for` loop (not `if`) keeps repeating until there are no more cases to fix. This is needed because after the first replacement, a new problematic pattern might be revealed.
+
+Example: `"' awesome '"`
+- First pass removes `"' "` → `"'awesome '"`
+- Second pass removes `" '"` → `"'awesome'"`
+- No more matches → loop ends
+
+`return text` returns the fully corrected string — punctuation spaced correctly and quotes tightened.
 
 ---
 
