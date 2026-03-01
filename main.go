@@ -27,7 +27,7 @@ func main() {
 
 	text = processFlags(text)
 	text = processPunctuation(text)
-	text = processVowels(text)
+	// 	text = processVowels(text)
 
 	if len(text) > 0 && text[len(text)-1] != '\n' {
 		text += "\n"
@@ -45,23 +45,18 @@ func processFlags(text string) string {
 	words := strings.Fields(text)
 
 	for i := 0; i < len(words); i++ {
-
 		word := words[i]
 
 		if strings.HasPrefix(word, "(") {
-
 			op := ""
 			count := 1
 			isComplex := false
 
 			if strings.HasSuffix(word, ")") {
-
 				op = strings.Trim(word, "()")
-
 			}
 
 			if strings.HasSuffix(word, ",") && i+1 <= len(words) && strings.HasSuffix(words[i+1], ")") {
-
 				op = strings.Trim(word, "(,")
 
 				numStr := strings.Trim(words[i+1], "()")
@@ -69,17 +64,14 @@ func processFlags(text string) string {
 				val, err := strconv.Atoi(numStr)
 
 				if err == nil {
-
 					count = val
 					isComplex = true
-
 				}
 			}
 
-			if op == "hex" || op == "bin" || op == "low" || op == "up" || op == "cap" {
+			if op == "hex" || op == "bin" || op == "up" || op == "low" || op == "cap" {
 
 				for j := 1; j <= count && i-j >= 0; j++ {
-
 					target := words[i-j]
 
 					switch op {
@@ -101,12 +93,11 @@ func processFlags(text string) string {
 						words[i-j] = strings.Title(strings.ToLower(target))
 					}
 				}
+
 				if isComplex {
 
 					words = append(words[:i], words[i+2:]...)
-
 				} else {
-
 					words = append(words[:i], words[i+1:]...)
 				}
 				i--
@@ -116,37 +107,21 @@ func processFlags(text string) string {
 	return strings.Join(words, " ")
 }
 
-// PASS 2: Handle Punctuation spacing & Single Quotes
 func processPunctuation(text string) string {
+
 	var result strings.Builder
 
 	for i := 0; i < len(text); i++ {
+
 		if text[i] == ' ' && i+1 < len(text) && strings.ContainsRune(".,!?:;", rune(text[i+1])) {
 			continue
 		}
 		result.WriteByte(text[i])
+
 		if strings.ContainsRune(".,!?:;", rune(text[i])) && i+1 < len(text) && !strings.ContainsRune(".,!?:; ", rune(text[i+1])) {
 			result.WriteByte(' ')
 		}
 	}
-	// Fix single quotes — remove spaces inside ' ... '
-	text = result.String()
-	for strings.Contains(text, "' ") || strings.Contains(text, " '") {
-		text = strings.ReplaceAll(text, "' ", "'")
-		text = strings.ReplaceAll(text, " '", "'")
-	}
-	return text
-}
+	return result.String()
 
-// PASS 3: 'a' -> 'an' before vowels or 'h'
-func processVowels(text string) string {
-	words := strings.Fields(text)
-
-	for i := 0; i < len(words)-1; i++ {
-		if (words[i] == "a" || words[i] == "A") && strings.ContainsRune("aeiouAEIOUhH", rune(words[i+1][0])) {
-			words[i] += "n"
-		}
-	}
-
-	return strings.Join(words, " ")
 }
