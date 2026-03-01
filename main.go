@@ -122,6 +122,12 @@ func processPunctuation(text string) string {
 			result.WriteByte(' ')
 		}
 	}
-	return result.String()
+	text = result.String()
 
+	for strings.Contains(text, "' ") || strings.Contains(text, " '") {
+
+		text = strings.ReplaceAll(text, "' ", "'")
+		text = strings.ReplaceAll(text, " '", "'")
+	}
+	return text
 }
